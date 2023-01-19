@@ -12,10 +12,10 @@ def get_bc_config():
     config.cnn_features = (32, 64, 128, 256)
     config.cnn_filters = (3, 3, 3, 3)
     config.cnn_strides = (2, 2, 2, 2)
-    config.cnn_padding = 'VALID'
+    config.cnn_padding = "VALID"
     config.latent_dim = 50
 
-    config.encoder = 'd4pg'
+    config.encoder = "d4pg"
 
     config.dropout_rate = config_dict.placeholder(float)
     config.cosine_decay = True
@@ -35,8 +35,8 @@ def get_iql_config():
     config.cnn_features = (32, 64, 128, 256)
     config.cnn_filters = (3, 3, 3, 3)
     config.cnn_strides = (2, 2, 2, 2)
-    config.cnn_padding = 'VALID'
-    config.cnn_groups = 3 ###===### ###---###
+    config.cnn_padding = "VALID"
+    config.cnn_groups = 3
     config.latent_dim = 50
 
     config.discount = 0.99
@@ -48,14 +48,14 @@ def get_iql_config():
 
     config.tau = 0.005
 
-    config.critic_reduction = 'min'
+    config.critic_reduction = "min"
     config.share_encoder = False
 
     return config
 
-###===###
+
 def get_cql_config():
-    config = ml_collections.ConfigDict()
+    config = ml_collections.configdict()
 
     config.actor_lr = 3e-4
     config.critic_lr = 3e-4
@@ -66,7 +66,7 @@ def get_cql_config():
     config.cnn_features = (32, 64, 128, 256)
     config.cnn_filters = (3, 3, 3, 3)
     config.cnn_strides = (2, 2, 2, 2)
-    config.cnn_padding = 'VALID'
+    config.cnn_padding = "valid"
     config.cnn_groups = 3
     config.latent_dim = 50
 
@@ -84,29 +84,94 @@ def get_cql_config():
 
     config.tau = 0.005
 
-    config.critic_reduction = 'min'
+    config.critic_reduction = "min"
     config.share_encoder = False
 
     return config
-###---###
+
+
+def get_sac_config():
+    config = ml_collections.configdict()
+
+    config.actor_lr = 3e-4
+    config.critic_lr = 3e-4
+    config.temp_lr = 3e-4
+
+    config.hidden_dims = (256, 256)
+
+    config.cnn_features = (32, 64, 128, 256)
+    config.cnn_filters = (3, 3, 3, 3)
+    config.cnn_strides = (2, 2, 2, 2)
+    config.cnn_padding = "valid"
+    config.cnn_groups = 3
+    config.latent_dim = 50
+
+    config.discount = 0.99
+
+    config.backup_entropy = False
+    config.target_entropy = None
+    config.init_temperature = 1.0
+    config.dropout_rate = config_dict.placeholder(float)
+    config.cosine_decay = True
+
+    config.tau = 0.005
+
+    config.critic_reduction = "min"
+    config.share_encoder = False
+
+    return config
+
+
+def get_sacbc_config():
+    config = ml_collections.configdict()
+
+    config.actor_lr = 3e-4
+    config.critic_lr = 3e-4
+    config.temp_lr = 3e-4
+
+    config.hidden_dims = (256, 256)
+
+    config.cnn_features = (32, 64, 128, 256)
+    config.cnn_filters = (3, 3, 3, 3)
+    config.cnn_strides = (2, 2, 2, 2)
+    config.cnn_padding = "valid"
+    config.cnn_groups = 3
+    config.latent_dim = 50
+
+    config.discount = 0.99
+
+    config.backup_entropy = False
+    config.target_entropy = None
+    config.init_temperature = 1.0
+    config.dropout_rate = config_dict.placeholder(float)
+    config.cosine_decay = True
+
+    config.tau = 0.005
+
+    config.critic_reduction = "min"
+    config.share_encoder = False
+
+    config.bc_regularizer = 0.1
+
+    return config
 
 
 def get_config(config_string):
     possible_structures = {
-        'bc':
-        ml_collections.ConfigDict({
-            'model_constructor': 'PixelBCLearner',
-            'model_config': get_bc_config()
-        }),
-        'iql':
-        ml_collections.ConfigDict({
-            'model_constructor': 'PixelIQLLearner',
-            'model_config': get_iql_config()
-        }),
-        'cql': ###===###
-        ml_collections.ConfigDict({
-            'model_constructor': 'PixelCQLLearner',
-            'model_config': get_cql_config()
-        }), ###---###
+        "bc": ml_collections.ConfigDict(
+            {"model_constructor": "PixelBCLearner", "model_config": get_bc_config()}
+        ),
+        "iql": ml_collections.ConfigDict(
+            {"model_constructor": "PixelIQLLearner", "model_config": get_iql_config()}
+        ),
+        "cql": ml_collections.ConfigDict(
+            {"model_constructor": "PixelCQLLearner", "model_config": get_cql_config()}
+        ),
+        "sac": ml_collections.ConfigDict(
+            {"model_constructor": "PixelSACLearner", "model_config": get_sac_config()}
+        ),
+        "sacbc": ml_collections.ConfigDict(
+            {"model_constructor": "PixelSACLearner", "model_config": get_sacbc_config()}
+        ),
     }
     return possible_structures[config_string]
