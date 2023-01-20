@@ -55,7 +55,7 @@ def get_iql_config():
 
 
 def get_cql_config():
-    config = ml_collections.configdict()
+    config = ml_collections.ConfigDict()
 
     config.actor_lr = 3e-4
     config.critic_lr = 3e-4
@@ -91,7 +91,7 @@ def get_cql_config():
 
 
 def get_sac_config():
-    config = ml_collections.configdict()
+    config = ml_collections.ConfigDict()
 
     config.actor_lr = 3e-4
     config.critic_lr = 3e-4
@@ -123,7 +123,7 @@ def get_sac_config():
 
 
 def get_sacbc_config():
-    config = ml_collections.configdict()
+    config = ml_collections.ConfigDict()
 
     config.actor_lr = 3e-4
     config.critic_lr = 3e-4

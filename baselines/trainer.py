@@ -23,8 +23,8 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_enum(
     "env_name",
-    "randomized_kitchen-v1",
-    ["randomized_kitchen-v1", "RPL_kitchen-v1"],
+    "random_kitchen-v1",
+    ["random_kitchen-v1", "RPL_kitchen-v1"],
     "Environment name.",
 )
 flags.DEFINE_enum(
@@ -44,7 +44,7 @@ flags.DEFINE_enum(
 flags.DEFINE_string(
     "dataset",
     "expert",
-    "Offline dataset to use for training. For multiple datasets at once, separate by '+' e.g. expert_data+suboptimal_data. For RPL_kitchen-v1, use RPL_data. For randomized_kitchen-v1, data is ['expert_demos', 'expert_suboptimal', 'play_data']",
+    "Offline dataset to use for training. For multiple datasets at once, separate by '+' e.g. expert_data+suboptimal_data. For RPL_kitchen-v1, use RPL_data. For random_kitchen-v1, data is ['expert_demos', 'expert_suboptimal', 'play_data']",
 )
 flags.DEFINE_string("save_dir", "", "Tensorboard logging dir.")
 flags.DEFINE_string("project", "", "WandB project.")
@@ -61,11 +61,10 @@ flags.DEFINE_boolean("debug", False, "Save videos during evaluation.")
 
 config_flags.DEFINE_config_file(
     "config",
-    f"./configs/offline_pixels_config.py:{FLAGS.agent}",
+    f"./configs/offline_pixels_config.py:cql",
     "File path to the training hyperparameter configuration.",
     lock_config=False,
 )
-
 
 def main(_):
 
@@ -78,9 +77,9 @@ def main(_):
             f"{FLAGS.env_name}_{FLAGS.task}_{FLAGS.agent}_{FLAGS.dataset}_{FLAGS.seed}"
         )
     if not FLAGS.save_dir:
-        FLAGS.save_dir = os.path.join(FLAGS.project, 'save_dir')
+        FLAGS.save_dir = os.path.join(FLAGS.project, "save_dir")
 
-    wandb.init(project=FLAGS.project, entity='iris_intel')
+    wandb.init(project=FLAGS.project, entity="iris_intel")
     wandb.config.update(FLAGS)
 
     if FLAGS.task == "id":
@@ -88,7 +87,7 @@ def main(_):
     elif FLAGS.task == "ood":
         FLAGS.tasks_to_complete = "microwave+kettle+bottomknob+switch"
 
-    if FLAGS.env_name == 'RPL_kitchen-v1':
+    if FLAGS.env_name == "RPL_kitchen-v1":
         FLAGS.eval_episodes = 10
 
     env = gym.make(
