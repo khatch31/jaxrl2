@@ -17,7 +17,6 @@ def read_requirements_file(filename):
 description = "Implementations of Reinforcement Learning algorithms in Jax."
 
 install_requires = read_requirements_file("requirements.txt")
-test_requires = read_requirements_file("requirements_test.txt")
 
 setup(
     name="jaxrl2",
@@ -25,7 +24,7 @@ setup(
     description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ikostrikov/jaxrl",
+    # url="https://github.com/ikostrikov/jaxrl",
     author="Ilya Kostrikov",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -41,9 +40,5 @@ setup(
     keywords="reinforcement, machine, learning, research",
     packages=find_packages(),
     install_requires=install_requires,
-    test_requires=test_requires,
-    extras_require={
-        "test": test_requires,
-    },
     license="MIT",
 )

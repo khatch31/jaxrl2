@@ -20,7 +20,16 @@ def evaluate(agent, env: gym.Env, num_episodes: int, progress_bar=False) -> Dict
             action = agent.eval_actions(observation)
             observation, _, done, _ = env.step(action)
 
-    return {"return": np.mean(env.return_queue), "length": np.mean(env.length_queue)}
+    return {
+        'return_mean': np.mean(env.return_queue),
+        'return_max': np.max(env.return_queue),
+        'return_min': np.min(env.return_queue),
+        'return_std': np.std(env.return_queue),
+        'length_mean': np.mean(env.length_queue),
+        'length_max': np.max(env.length_queue),
+        'length_min': np.min(env.length_queue),
+        'length_std': np.std(env.length_queue)
+    }
 
 
 def evaluate_log_prob(agent, dataset: Dataset, batch_size: int = 2048) -> float:
