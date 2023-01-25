@@ -31,6 +31,7 @@ from jaxrl2.networks.values import StateActionEnsemble, StateValue
 from jaxrl2.types import Params, PRNGKey
 from jaxrl2.utils.target_update import soft_target_update
 
+import pathlib ###===### ###---###
 
 @functools.partial(jax.jit, static_argnames=("critic_reduction", "share_encoder", 'backup_entropy', 'max_q_backup', 'use_sarsa_backups'))
 def _update_jit(
@@ -237,3 +238,33 @@ class PixelCQLLearner(Agent):
         self._temp = new_temp
 
         return info
+
+    ###===###
+    @property
+    def _save_dict(self):
+        save_dict = {
+            'critic': self._critic,
+            'target_critic_params': self._target_critic_params,
+            'actor': self._actor,
+            "temp":self._temp,
+        }
+        return save_dict
+
+    def restore_checkpoint(self, dir):
+        if pathlib.Path(dir).is_file():
+            checkpoint_file = dir
+        else:
+            def sort_key_fn(checkpoint_file):
+                chkpt_name = checkpoint_file.split("/")[-1]
+                return int(chkpt_name[len("checkpoint"):])
+
+            checkpoint_files = glob(os.path.join(dir, "checkpoint*"))
+            checkpoint_files = sorted(checkpoint_files, key=sort_key_fn)
+            checkpoint_file = checkpoint_files[-1]
+
+        output_dict = checkpoints.restore_checkpoint(checkpoint_file, self._save_dict)
+        self._critic = output_dict['critic']
+        self._target_critic_params = output_dict['target_critic_params']
+        self._actor = output_dict['actor']
+        self._temp = output_dict["temp"]
+    ###---###

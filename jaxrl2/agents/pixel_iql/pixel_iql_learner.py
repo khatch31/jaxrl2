@@ -16,8 +16,8 @@ from jaxrl2.agents.drq.drq_learner import _share_encoder, _unpack
 from jaxrl2.agents.iql.actor_updater import update_actor
 from jaxrl2.agents.iql.critic_updater import update_q, update_v
 from jaxrl2.data.dataset import DatasetDict
-from jaxrl2.networks.encoders import D4PGEncoder
-# from jaxrl2.networks.encoders import D4PGEncoderGroups ###===### ###---###
+# from jaxrl2.networks.encoders import D4PGEncoder
+from jaxrl2.networks.encoders import D4PGEncoderGroups ###===### ###---###
 from jaxrl2.networks.normal_policy import UnitStdNormalPolicy
 from jaxrl2.networks.pixel_multiplexer import PixelMultiplexer
 from jaxrl2.networks.values import StateActionEnsemble, StateValue
@@ -124,8 +124,8 @@ class PixelIQLLearner(Agent):
         rng = jax.random.PRNGKey(seed)
         rng, actor_key, critic_key, value_key = jax.random.split(rng, 4)
 
-        encoder_def = D4PGEncoder(cnn_features, cnn_filters, cnn_strides, cnn_padding)
-        # encoder_def = D4PGEncoderGroups(cnn_features, cnn_filters, cnn_strides, cnn_padding, cnn_groups) ###===### ###---###
+        # encoder_def = D4PGEncoder(cnn_features, cnn_filters, cnn_strides, cnn_padding)
+        encoder_def = D4PGEncoderGroups(cnn_features, cnn_filters, cnn_strides, cnn_padding, cnn_groups) ###===### ###---###
 
         if decay_steps is not None:
             actor_lr = optax.cosine_decay_schedule(actor_lr, decay_steps)
@@ -207,3 +207,33 @@ class PixelIQLLearner(Agent):
         self._value = new_value
 
         return info
+
+    ###===###
+    @property
+    def _save_dict(self):
+        save_dict = {
+            'critic': self._critic,
+            'target_critic_params': self._target_critic_params,
+            'actor': self._actor,
+            "value":self._value,
+        }
+        return save_dict
+
+    def restore_checkpoint(self, dir):
+        if pathlib.Path(dir).is_file():
+            checkpoint_file = dir
+        else:
+            def sort_key_fn(checkpoint_file):
+                chkpt_name = checkpoint_file.split("/")[-1]
+                return int(chkpt_name[len("checkpoint"):])
+
+            checkpoint_files = glob(os.path.join(dir, "checkpoint*"))
+            checkpoint_files = sorted(checkpoint_files, key=sort_key_fn)
+            checkpoint_file = checkpoint_files[-1]
+
+        output_dict = checkpoints.restore_checkpoint(checkpoint_file, self._save_dict)
+        self._critic = output_dict['critic']
+        self._target_critic_params = output_dict['target_critic_params']
+        self._actor = output_dict['actor']
+        self._value = output_dict["value"]
+    ###---###
