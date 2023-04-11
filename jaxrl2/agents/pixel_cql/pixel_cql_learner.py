@@ -32,6 +32,9 @@ from jaxrl2.types import Params, PRNGKey
 from jaxrl2.utils.target_update import soft_target_update
 
 import pathlib ###===### ###---###
+import os
+from flax.training import checkpoints
+from glob import glob
 
 @functools.partial(jax.jit, static_argnames=("critic_reduction", "share_encoder", 'backup_entropy', 'max_q_backup', 'use_sarsa_backups'))
 def _update_jit(
@@ -267,4 +270,19 @@ class PixelCQLLearner(Agent):
         self._target_critic_params = output_dict['target_critic_params']
         self._actor = output_dict['actor']
         self._temp = output_dict["temp"]
+
+@functools.partial(jax.jit)
+def get_q_value(critic, obs, act):
+    return critic.apply_fn({'params': critic.params}, obs, act)
+
+# @functools.partial(jax.jit)
+# def get_q_value(actions, observations, critic):
+#     # q_pred = critic.apply_fn({'params': critic.params}, {"pixels":images[..., None]}, actions)
+#     # q_pred = critic.apply_fn({'params': critic.params}, {"pixels":images[..., :3, :-1]}, actions)
+#     # q_pred = critic.apply_fn({'params': critic.params}, {"pixels":images[..., :-1]}, actions)
+#     obs = observations.copy()
+#     obs["pixels"] = observations["pixels"][..., :-1]
+#     q_pred = critic.apply_fn({'params': critic.params}, obs, actions)
+#     return q_pred
+
     ###---###

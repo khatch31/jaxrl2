@@ -17,6 +17,8 @@ def get_bc_config():
 
     config.encoder = "d4pg"
 
+    config.cnn_groups = 1 #######
+
     config.dropout_rate = config_dict.placeholder(float)
     config.cosine_decay = True
 

@@ -13,6 +13,7 @@ from jaxrl2.agents.bc.actor_updater import log_prob_update
 from jaxrl2.agents.drq.augmentations import batched_random_crop
 from jaxrl2.data.dataset import DatasetDict
 from jaxrl2.networks.encoders import D4PGEncoder, ResNetV2Encoder
+from jaxrl2.networks.encoders import D4PGEncoderGroups ###===### ###---###
 from jaxrl2.networks.normal_policy import UnitStdNormalPolicy
 from jaxrl2.networks.pixel_multiplexer import PixelMultiplexer
 from jaxrl2.types import Params, PRNGKey
@@ -45,6 +46,7 @@ class PixelBCLearner(Agent):
         cnn_filters: Sequence[int] = (3, 3, 3, 3),
         cnn_strides: Sequence[int] = (2, 1, 1, 1),
         cnn_padding: str = "VALID",
+        cnn_groups: int = 1,  ###===### ###---###
         latent_dim: int = 50,
         dropout_rate: Optional[float] = None,
         encoder: str = "d4pg",
@@ -59,9 +61,8 @@ class PixelBCLearner(Agent):
         rng, actor_key = jax.random.split(rng)
 
         if encoder == "d4pg":
-            encoder_def = D4PGEncoder(
-                cnn_features, cnn_filters, cnn_strides, cnn_padding
-            )
+            # encoder_def = D4PGEncoder(cnn_features, cnn_filters, cnn_strides, cnn_padding)
+            encoder_def = D4PGEncoderGroups(cnn_features, cnn_filters, cnn_strides, cnn_padding, cnn_groups) ###===### ###---###
         elif encoder == "resnet":
             encoder_def = ResNetV2Encoder((2, 2, 2, 2))
 

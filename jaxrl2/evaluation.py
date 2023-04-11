@@ -45,10 +45,17 @@ def evaluate_mb_finetuning(agent, env: gym.Env, num_episodes: int, progress_bar=
     ###---###
         objects_maniplated = collections.defaultdict(list)
 
+
         observation, done = env.reset(), False
         while not done:
             action = agent.eval_actions(observation)
-            observation, _, done, info = env.step(action)
+            env_step = env.step(action)
+            if len(env_step) == 4:
+                observation, _, done, info = env_step
+            elif len(env_step) == 5:
+                observation, _, done, _, info = env_step
+            else:
+                raise ValueError(f"env_step should be length 4 or 5 but is length {len(env_step)}")
 
             for key, val in info.items():
                 if "reward " in key:
@@ -60,15 +67,22 @@ def evaluate_mb_finetuning(agent, env: gym.Env, num_episodes: int, progress_bar=
             total += np.sum(val) > 0
         objects_maniplated_queue["total"] = total
 
+    successes = [ep_return > 0 for ep_return in env.return_queue]
     return_info = {
         'return_mean': np.mean(env.return_queue),
         'return_max': np.max(env.return_queue),
         'return_min': np.min(env.return_queue),
         'return_std': np.std(env.return_queue),
+
+        'success_mean': np.mean(successes),
+        'success_max': np.max(successes),
+        'success_min': np.min(successes),
+        'success_std': np.std(successes),
+
         'length_mean': np.mean(env.length_queue),
         'length_max': np.max(env.length_queue),
         'length_min': np.min(env.length_queue),
-        'length_std': np.std(env.length_queue)
+        'length_std': np.std(env.length_queue),
     }
 
     for key, val in objects_maniplated_queue.items():

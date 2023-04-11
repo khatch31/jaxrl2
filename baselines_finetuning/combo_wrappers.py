@@ -6,9 +6,9 @@ import traceback
 
 import gym
 import mujoco_py
-#import d4rl
+import d4rl
 #import robel
-# import metaworld
+import metaworld
 import numpy as np
 from PIL import Image
 
@@ -17,6 +17,215 @@ from PIL import Image
 
 import threading
 from dm_control.mujoco import engine
+
+class MetaWorldEnv:
+
+  def __init__(self, name="assembly-v2", action_repeat=2, size=(64, 64)):
+      from metaworld.envs.mujoco.env_dict import ALL_V2_ENVIRONMENTS
+      # render_params={"assembly-v2" : {"elevation": -22.5,
+      #                                 "azimuth": 15,
+      #                                 "distance": 0.5,
+      #                                 "lookat": np.array([-0.15, 0.65, 0.25])}}
+      render_params={"elevation": -22.5,
+                     "azimuth": 15,
+                     "distance": 0.75,
+                     "lookat": np.array([-0.15, 0.65, 0.25])}
+
+      self._env = ALL_V2_ENVIRONMENTS[name]()
+      self._env.max_path_length = np.inf
+      self._env._freeze_rand_vec = False
+      self._env._partially_observable = False
+      self._env._set_task_called = True
+
+      self.hand_init_pose = self._env.hand_init_pos.copy()
+      self.hand_init_pose = np.array([0.1 , 0.5, 0.30])
+
+      self.action_repeat = action_repeat
+
+      self.size = size
+      self.viewer = mujoco_py.MjRenderContextOffscreen(self._env.sim, -1)
+      # self.viewer = mujoco_py.MjRenderContextOffscreen(self._env.sim, 0)
+
+      # self.set_viewer_params(render_params[name])
+      self.set_viewer_params(render_params)
+
+      self.observation_space = self.get_observation_space()
+
+
+  def __getattr__(self, attr):
+     if attr == '_wrapped_env':
+       raise AttributeError()
+     return getattr(self._env, attr)
+
+  # @property
+  # def observation_space(self):
+  def get_observation_space(self):
+        spaces = {}
+        spaces['pixels'] = gym.spaces.Box(0, 255, (self.size[0], self.size[1], 3), dtype=np.uint8)
+        return gym.spaces.Dict(spaces)
+
+  def set_viewer_params(self, params):
+      self.viewer.cam.elevation = params["elevation"]
+      self.viewer.cam.azimuth = params["azimuth"]
+      self.viewer.cam.distance = params["distance"]
+      self.viewer.cam.lookat[:] = params["lookat"][:]
+
+  def step(self, action):
+    reward = 0.0
+    for _ in range(self.action_repeat):
+        state, rew, done, info = self._env.step(action)
+        reward += rew
+        if done:
+            break
+    reward = 1.0 * info['success']
+    img = self.render(mode='rgb_array', width = self.size[0], height = self.size[1])
+    img = self.render(mode='rgb_array', width = self.size[0], height = self.size[1])
+    # obs = {'pixels':img, 'reward':reward}
+    obs = {'pixels':img}
+    return obs, reward, done, info
+
+  def reset(self):
+    self._env.hand_init_pos = self.hand_init_pose + 0.02 * np.random.normal(size = 3)
+    _ = self._env.reset()
+    for i in range(10):
+        state,_,_,_ = self._env.step(np.zeros(self.action_space.shape))
+    img = self.render(mode='rgb_array', width = self.size[0], height = self.size[1])
+    img = self.render(mode='rgb_array', width = self.size[0], height = self.size[1])
+    # obs = {'image':img, 'reward':0.0}
+    obs = {'pixels':img}
+    return obs
+
+  def render(self, mode, width = 128, height = 128):
+      self.viewer.render(width=width, height=width)
+      img = self.viewer.read_pixels(width, height, depth=False)
+      # img = self._env.sim.render(width, height)
+      img = img[::-1]
+      return img
+
+
+class AdroitHand:
+    def __init__(self, env_name, img_width, img_height, proprio=False, camera_angle="camera2"):
+        self._env_name = env_name
+        self._env = gym.make(env_name).env
+        self._img_width = img_width
+        self._img_height = img_height
+        self._proprio = proprio
+        self._camera_angle = camera_angle
+
+        self.setup_viewer()
+
+        self.observation_space = self.get_observation_space()
+
+    def setup_viewer(self):
+        #Setup camera in environment
+        # self.viewer = mujoco_py.MjRenderContextOffscreen(self._env.sim, -1)
+        self.viewer = mujoco_py.MjRenderContextOffscreen(self._env.sim, 0)
+
+        if self._camera_angle == "camera1":
+            # Use this
+            self.viewer.cam.elevation = -40
+            self.viewer.cam.azimuth = 20
+            self.viewer.cam.distance = 0.5
+            self.viewer.cam.lookat[0] = -0.2
+            self.viewer.cam.lookat[1] = -0.2
+            self.viewer.cam.lookat[2] = 0.4
+        elif self._camera_angle == "camera2":
+            self.viewer.cam.elevation = -40
+            self.viewer.cam.azimuth = 20
+            self.viewer.cam.distance = 0.4
+            self.viewer.cam.lookat[0] = -0.2
+            self.viewer.cam.lookat[1] = -0.2
+            self.viewer.cam.lookat[2] = 0.3
+        elif self._camera_angle == "camera3":
+            self.viewer.cam.elevation = -40
+            self.viewer.cam.azimuth = 20
+            self.viewer.cam.distance = 0.5
+            self.viewer.cam.lookat[0] = -0.2
+            self.viewer.cam.lookat[1] = -0.2
+            self.viewer.cam.lookat[2] = 0.3
+        elif self._camera_angle == "camera4":
+            self.viewer.cam.elevation = -15
+            self.viewer.cam.azimuth = 30
+            self.viewer.cam.distance = 0.5
+            self.viewer.cam.lookat[0] = -0.2
+            self.viewer.cam.lookat[1] = -0.2
+            self.viewer.cam.lookat[2] = 0.4
+        elif self._camera_angle == "camera5":
+            self.viewer.cam.elevation = -40
+            self.viewer.cam.azimuth = 30
+            self.viewer.cam.distance = 0.3
+            self.viewer.cam.lookat[0] = -0.1
+            self.viewer.cam.lookat[1] = -0.3
+            self.viewer.cam.lookat[2] = 0.4
+        elif self._camera_angle == "camera6":
+            self.viewer.cam.elevation = -50
+            self.viewer.cam.azimuth = 0
+            self.viewer.cam.distance = 0.5
+            self.viewer.cam.lookat[0] = -0.1
+            self.viewer.cam.lookat[1] = -0.0
+            self.viewer.cam.lookat[2] = 0.4
+        else:
+            raise ValueError(f"Unsupported camera angle: \"{self._camera_angle}\".")
+
+    def __getattr__(self, attr):
+        if attr == '_wrapped_env':
+            raise AttributeError()
+        return getattr(self._env, attr)
+
+    def render(self):
+        # image = self._env.sim.render(self._img_width, self._img_height)
+        # image = np.flip(image, axis=0)
+        # return image
+        self.viewer.render(width=self._img_width, height=self._img_height)
+        img = self.viewer.read_pixels(self._img_width, self._img_height, depth=False)
+        img = img[::-1]
+        return img
+
+    def reset(self, *args, **kwargs):
+        state = self._env.reset(*args, **kwargs)
+        img = self.render()
+        # obs = {'state':state, 'image':img}
+        obs = {'pixels':img}
+
+        if self._proprio:
+            obs["states"] = self.get_proprio() # proprio is called 'states' in jaxrl2
+
+        return obs
+
+    def get_proprio(self):
+        qpos = self._env.data.qpos.ravel()
+        if "hammer" in self._env_name or "pen" in self._env_name or "relocate" in self._env_name:
+            return qpos[:-6]
+        elif "door" in self._env_name:
+            return qpos[1:-2]
+        else:
+            raise NotImplementedError(f"Proprio not supported for \"{self._env_name}\" environment.")
+
+    def step(self, *args, **kwargs):
+        state, reward, done, info = self._env.step(*args, **kwargs)
+        img = self.render()
+        # obs = {'state':state, 'image':img}
+        obs = {'pixels':img}
+
+        if self._proprio:
+            obs["states"] = self.get_proprio()
+
+        return obs, reward, done, info
+
+    # @property
+    # def observation_space(self):
+    def get_observation_space(self):
+        spaces = {}
+        # for key, value in self._env.observation_spec().items():
+        #     spaces[key] = gym.spaces.Box(-np.inf, np.inf, value.shape, dtype=np.float32)
+        # spaces["state"] = self._env.observation_space
+        spaces['pixels'] = gym.spaces.Box(0, 255, (self._img_width, self._img_height, 3), dtype=np.uint8)
+
+        if self._proprio:
+            # spaces["proprio"] = gym.spaces.Box(-np.inf, np.inf, self.get_proprio().shape, dtype=np.float32)
+            spaces["states"] = gym.spaces.Box(-np.inf, np.inf, self.get_proprio().shape, dtype=np.float32)
+
+        return gym.spaces.Dict(spaces)
 
 
 OBS_ELEMENT_INDICES = {

@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=6
 #SBATCH --gres=gpu:titanrtx:1
 #SBATCH --mem=64G
-#SBATCH --job-name="cql2"
+#SBATCH --job-name="cdrhc"
 #SBATCH --account=iris
 
 cd /iris/u/khatch/vd5rl/jaxrl2/baselines_finetuning
@@ -16,6 +16,9 @@ source activate jaxrl
 
 unset LD_LIBRARY_PATH
 unset LD_PRELOAD
+
+export LD_PRELOAD=$LD_PRELOAD:/usr/lib/x86_64-linux-gnu/libGLEW.so:/usr/lib/nvidia-384/libGL.so
+
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.mujoco/mujoco200/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.mujoco/mujoco210/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/
@@ -27,6 +30,8 @@ export GPUS=$SLURM_JOB_GPUS
 export MUJOCO_GL="egl"
 # export XLA_PYTHON_CLIENT_MEM_FRACTION=.7
 
+echo "========== RIGHT ONE =========="
+
 which python
 which python3
 nvidia-smi
@@ -35,42 +40,52 @@ ls -l /usr/local
 python3 -u gpu_test.py
 
 XLA_PYTHON_CLIENT_PREALLOCATE=false python3 -u CQL_trainer_episode_tune.py \
---task "kitchen_microwave+kettle+light switch+slide cabinet" \
---datadir /iris/u/khatch/preliminary_experiments/model_based_offline_online/LOMPO/data/kitchen2/kitchen_demos_multitask_npz \
+--task "adroithand_door-human-cloned-v1" \
+--camera_angle camera4 \
+--datadir /iris/u/khatch/preliminary_experiments/model_based_offline_online/LOMPO/data/adroit_hand/door-human-cloned-v1 \
 --tqdm=true \
 --project modelfree_finetuning_baselines2 \
+--proprio=true \
 --description default \
---eval_episodes 1 \
+--eval_episodes 10 \
 --eval_interval 200 \
+--ep_length 300 \
 --max_offline_steps 10_000 \
---max_online_steps 1000 \
---replay_buffer_size 600_000 \
---seed 3 &
+--max_online_steps 66_300 \
+--replay_buffer_size 1_000_000 \
+--seed 0 \
+--debug=false &
 
 XLA_PYTHON_CLIENT_PREALLOCATE=false python3 -u CQL_trainer_episode_tune.py \
---task "kitchen_microwave+kettle+bottom burner+light switch" \
---datadir /iris/u/khatch/preliminary_experiments/model_based_offline_online/LOMPO/data/kitchen2/kitchen_demos_multitask_npz \
+--task "adroithand_door-human-cloned-v1" \
+--camera_angle camera4 \
+--datadir /iris/u/khatch/preliminary_experiments/model_based_offline_online/LOMPO/data/adroit_hand/door-human-cloned-v1 \
 --tqdm=true \
 --project modelfree_finetuning_baselines2 \
+--proprio=true \
 --description default \
---eval_episodes 1 \
+--eval_episodes 10 \
 --eval_interval 200 \
+--ep_length 300 \
 --max_offline_steps 10_000 \
---max_online_steps 1000 \
---replay_buffer_size 600_000 \
---seed 3
+--max_online_steps 66_300 \
+--replay_buffer_size 1_000_000 \
+--seed 1 \
+--debug=false &
 
-
-
-XLA_PYTHON_CLIENT_PREALLOCATE=false python3 -u IQL_trainer_episode_tune.py \
---task "kitchen_microwave+kettle+bottom burner+light switch" \
---datadir /iris/u/khatch/preliminary_experiments/model_based_offline_online/LOMPO/data/kitchen2/kitchen_demos_multitask_npz \
+XLA_PYTHON_CLIENT_PREALLOCATE=false python3 -u CQL_trainer_episode_tune.py \
+--task "adroithand_door-human-cloned-v1" \
+--camera_angle camera4 \
+--datadir /iris/u/khatch/preliminary_experiments/model_based_offline_online/LOMPO/data/adroit_hand/door-human-cloned-v1 \
 --tqdm=true \
 --project modelfree_finetuning_baselines2 \
+--proprio=true \
 --description default \
---eval_episodes 1 \
+--eval_episodes 10 \
 --eval_interval 200 \
+--ep_length 300 \
 --max_offline_steps 10_000 \
---max_online_steps 1000 \
---replay_buffer_size 600_000 \
---seed 3
+--max_online_steps 66_300 \
+--replay_buffer_size 1_000_000 \
+--seed 2 \
+--debug=false
